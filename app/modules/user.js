@@ -42,7 +42,7 @@ function(app, Repo) {
 
     tagName: "li",
 
-    data: function() {
+    serializeData: function() {
       return { model: this.model };
     },
 
@@ -59,19 +59,15 @@ function(app, Repo) {
     },
 
     initialize: function() {
-      this.model.on("change", this.render, this);
+      this.listenTo(this.model, "change", this.render);
     }
   });
 
   User.Views.List = Backbone.View.extend({
     template: "user/list",
 
-    data: function() {
+    serializeData: function() {
       return { collection: this.options.users };
-    },
-
-    cleanup: function() {
-      this.options.users.off(null, null, this);
     },
 
     beforeRender: function() {
@@ -88,9 +84,11 @@ function(app, Repo) {
     },
 
     initialize: function() {
-      this.options.users.on("reset", this.render, this);
+      // Whenever the collection resets, re-render.
+      this.listenTo(this.options.users, "reset", this.render);
 
-      this.options.users.on("fetch", function() {
+      // Show a spinner while fetching.
+      this.listenTo(this.options.users, "fetch", function() {
         this.$("ul").parent().html("<img src='/app/img/spinner-gray.gif'>");
       }, this);
     },

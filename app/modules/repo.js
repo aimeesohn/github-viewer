@@ -42,7 +42,7 @@ function(app, Commit) {
 
     tagName: "li",
 
-    data: function() {
+    serializeData: function() {
       return { model: this.model };
     },
 
@@ -78,7 +78,7 @@ function(app, Commit) {
 
     className: "repos-wrapper",
 
-    data: function() {
+    serializeData: function() {
       return {
         count: this.options.repos.length 
       };
@@ -98,16 +98,14 @@ function(app, Commit) {
       }, this);
     },
 
-    cleanup: function() {
-      this.options.repos.off(null, null, this);
-    },
-
     initialize: function() {
-      this.options.repos.on("reset", this.render, this);
+      // Whenever the collection resets, re-render.
+      this.listenTo(this.options.repos, "reset", this.render);
 
-      this.options.repos.on("fetch", function() {
+      // Show a spinner while fetching.
+      this.listenTo(this.options.repos, "fetch", function() {
         this.$("ul").parent().html("<img src='/app/img/spinner.gif'>");
-      }, this);
+      });
     }
   });
 

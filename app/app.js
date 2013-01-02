@@ -29,7 +29,7 @@ function() {
   var JST = window.JST = window.JST || {};
 
   // Configure LayoutManager with Backbone Boilerplate defaults.
-  Backbone.LayoutManager.configure({
+  Backbone.Layout.configure({
     // Allow LayoutManager to augment Backbone.View.prototype.
     manage: true,
 
@@ -79,7 +79,7 @@ function() {
 
       // Create a new Layout with options.
       var layout = new Backbone.Layout(_.extend({
-        el: "#main"
+        el: "main"
       }, options));
 
       // Cache the refererence.

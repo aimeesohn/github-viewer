@@ -1,5 +1,5 @@
 /*!
- * Lo-Dash 1.0.0-rc.2 (Custom Build) <http://lodash.com>
+ * Lo-Dash 1.0.0-rc.3 (Custom Build) <http://lodash.com>
  * Build: `lodash underscore -d -o ./lodash.underscore.js`
  * (c) 2012 John-David Dalton <http://allyoucanleet.com/>
  * Based on Underscore.js 1.4.3 <http://underscorejs.org>
@@ -133,6 +133,9 @@
   var hasObjectSpliceBug = (hasObjectSpliceBug = { '0': 1, 'length': 1 },
     arrayRef.splice.call(hasObjectSpliceBug, 0, 1), hasObjectSpliceBug[0]);
 
+  /** Detect if `arguments` objects are `Object` objects (all but Opera < 10.5) */
+  var argsAreObjects = arguments.constructor == Object;
+
   /**
    * Detect lack of support for accessing string characters by index:
    *
@@ -182,7 +185,29 @@
   /*--------------------------------------------------------------------------*/
 
   /**
-   * The `lodash` function.
+   * Creates a `lodash` object, that wraps the given `value`, to enable
+   * method chaining.
+   *
+   * The chainable wrapper functions are:
+   * `after`, `assign`, `bind`, `bindAll`, `bindKey`, `chain`, `compact`, `compose`,
+   * `concat`, `countBy`, `debounce`, `defaults`, `defer`, `delay`, `difference`,
+   * `filter`, `flatten`, `forEach`, `forIn`, `forOwn`, `functions`, `groupBy`,
+   * `initial`, `intersection`, `invert`, `invoke`, `keys`, `map`, `max`, `memoize`,
+   * `merge`, `min`, `object`, `omit`, `once`, `pairs`, `partial`, `pick`, `pluck`,
+   * `push`, `range`, `reject`, `rest`, `reverse`, `shuffle`, `slice`, `sort`,
+   * `sortBy`, `splice`, `tap`, `throttle`, `times`, `toArray`, `union`, `uniq`,
+   * `unshift`, `values`, `where`, `without`, `wrap`, and `zip`
+   *
+   * The non-chainable wrapper functions are:
+   * `clone`, `cloneDeep`, `contains`, `escape`, `every`, `find`, `has`, `identity`,
+   * `indexOf`, `isArguments`, `isArray`, `isBoolean`, `isDate`, `isElement`, `isEmpty`,
+   * `isEqual`, `isFinite`, `isFunction`, `isNaN`, `isNull`, `isNumber`, `isObject`,
+   * `isPlainObject`, `isRegExp`, `isString`, `isUndefined`, `join`, `lastIndexOf`,
+   * `mixin`, `noConflict`, `pop`, `random`, `reduce`, `reduceRight`, `result`,
+   * `shift`, `size`, `some`, `sortedIndex`, `template`, `unescape`, and `uniqueId`
+   *
+   * The wrapper functions `first` and `last` return wrapped values when `n` is
+   * passed, otherwise they return unwrapped values.
    *
    * @name _
    * @constructor
@@ -251,6 +276,7 @@
   };
 
   /*--------------------------------------------------------------------------*/
+
   /** Reusable iterator options for `assign` and `defaults` */
   var assignIteratorOptions = {
     'args': 'object, source, guard',
@@ -262,9 +288,9 @@
   };
 
   /**
-   * Reusable iterator options shared by `forEach`, `forIn`, and `forOwn`.
+   * Reusable iterator options shared by `each`, `forIn`, and `forOwn`.
    */
-  var forEachIteratorOptions = {
+  var eachIteratorOptions = {
     'args': 'collection, callback, thisArg',
     'top': "callback = callback && typeof thisArg == 'undefined' ? callback : createCallback(callback, thisArg)",
     'arrayLoop': 'if (callback(iteratee[index], index, collection) === false) return result',
@@ -366,9 +392,11 @@
    * @param {Function|String} [func=identity|property] The function called per
    * iteration or property name to query.
    * @param {Mixed} [thisArg] The `this` binding of `callback`.
+   * @param {Object} [accumulating] Used to indicate that the callback should
+   *  accept an `accumulator` argument.
    * @returns {Function} Returns a callback function.
    */
-  function createCallback(func, thisArg) {
+  function createCallback(func, thisArg, accumulating) {
     if (!func) {
       return identity;
     }
@@ -378,6 +406,11 @@
       };
     }
     if (typeof thisArg != 'undefined') {
+      if (accumulating) {
+        return function(accumulator, value, index, object) {
+          return func.call(thisArg, accumulator, value, index, object);
+        };
+      }
       return function(value, index, object) {
         return func.call(thisArg, value, index, object);
       };
@@ -405,7 +438,7 @@
       'bottom': '',
       'hasDontEnumBug': hasDontEnumBug,
       'objectLoop': '',
-      'noArgsEnum': noArgsEnum,
+      'nonEnumArgs': nonEnumArgs,
       'noCharByIndex': noCharByIndex,
       'shadowed': shadowed,
       'top': '',
@@ -433,6 +466,38 @@
       nativeKeys, propertyIsEnumerable
     );
   }
+
+  /**
+   * A function compiled to iterate `arguments` objects, arrays, objects, and
+   * strings consistenly across environments, executing the `callback` for each
+   * element in the `collection`. The `callback` is bound to `thisArg` and invoked
+   * with three arguments; (value, index|key, collection). Callbacks may exit
+   * iteration early by explicitly returning `false`.
+   *
+   * @private
+   * @param {Array|Object|String} collection The collection to iterate over.
+   * @param {Function} [callback=identity] The function called per iteration.
+   * @param {Mixed} [thisArg] The `this` binding of `callback`.
+   * @returns {Array|Object|String} Returns `collection`.
+   */
+  var each = function (collection, callback, thisArg) {
+    var index, iteratee = collection, result = collection;
+    if (!collection) return result;
+    callback = callback && typeof thisArg == 'undefined' ? callback : createCallback(callback, thisArg);
+    var length = iteratee.length; index = -1;
+    if (typeof length == 'number') {  
+      while (++index < length) {
+        if (callback(iteratee[index], index, collection) === indicatorObject) return result
+      }
+    }
+    else {  
+      for (index in iteratee) {
+        if (hasOwnProperty.call(iteratee, index)) {    
+        if (callback(iteratee[index], index, collection) === indicatorObject) return result;    
+        }
+      }    
+    }
+  };
 
   /**
    * Used by `template` to escape characters for inclusion in compiled
@@ -718,14 +783,8 @@
   /*--------------------------------------------------------------------------*/
 
   /**
-   * Creates a clone of `value`. If `deep` is `true`, all nested objects will
-   * also be cloned, otherwise they will be assigned by reference. Functions and
-   * DOM nodes are **not** cloned. The enumerable properties of `arguments` objects
-   * and objects created by constructors other than `Object` are cloned to plain
-   * `Object` objects.
-   *
-   * Note: Lo-Dash's deep clone functionality is loosely based on the structured clone algorithm.
-   * See http://www.w3.org/TR/html5/common-dom-interfaces.html#internal-structured-cloning-algorithm.
+   * Creates a clone of `value`. If `deep` is `true`, nested objects will also
+   * be cloned, otherwise they will be assigned by reference.
    *
    * @static
    * @memberOf _
@@ -745,9 +804,6 @@
    *   { 'name': 'larry', 'age': 50 },
    *   { 'name': 'curly', 'age': 60 }
    * ];
-   *
-   * _.clone({ 'name': 'moe' });
-   * // => { 'name': 'moe' }
    *
    * var shallow = _.clone(stooges);
    * shallow[0] === stooges[0];
@@ -880,7 +936,9 @@
    * // => true
    */
   var isArray = nativeIsArray || function(value) {
-    return toString.call(value) == arrayClass;
+    // `instanceof` may cause a memory leak in IE 7 if `value` is a host object
+    // http://ajaxian.com/archives/working-aroung-the-instanceof-memory-leak
+    return (argsAreObjects && value instanceof Array) || toString.call(value) == arrayClass;
   };
 
   /**
@@ -914,7 +972,7 @@
    * // => true
    */
   function isDate(value) {
-    return toString.call(value) == dateClass;
+    return value instanceof Date || toString.call(value) == dateClass;
   }
 
   /**
@@ -1162,7 +1220,7 @@
   // fallback for older versions of Chrome and Safari
   if (isFunction(/x/)) {
     isFunction = function(value) {
-      return toString.call(value) == funcClass;
+      return value instanceof Function || toString.call(value) == funcClass;
     };
   }
 
@@ -1276,7 +1334,7 @@
    * // => true
    */
   function isRegExp(value) {
-    return toString.call(value) == regexpClass;
+    return value instanceof RegExp || toString.call(value) == regexpClass;
   }
 
   /**
@@ -1485,7 +1543,7 @@
     if (typeof length == 'number') {
       result = indexOf(collection, target) > -1;
     } else {
-      forEach(collection, function(value) {
+      each(collection, function(value) {
         return (result = value === target) && indicatorObject;
       });
     }
@@ -1521,6 +1579,7 @@
   function countBy(collection, callback, thisArg) {
     var result = {};
     callback = createCallback(callback, thisArg);
+
     forEach(collection, function(value, key, collection) {
       key = callback(value, key, collection);
       (hasOwnProperty.call(result, key) ? result[key]++ : result[key] = 1);
@@ -1561,7 +1620,7 @@
         }
       }
     } else {
-      forEach(collection, function(value, index, collection) {
+      each(collection, function(value, index, collection) {
         return !(result = !!callback(value, index, collection)) && indicatorObject;
       });
     }
@@ -1601,7 +1660,7 @@
         }
       }
     } else {
-      forEach(collection, function(value, index, collection) {
+      each(collection, function(value, index, collection) {
         if (callback(value, index, collection)) {
           result.push(value);
         }
@@ -1633,6 +1692,7 @@
   function find(collection, callback, thisArg) {
     var result;
     callback = createCallback(callback, thisArg);
+
     forEach(collection, function(value, index, collection) {
       if (callback(value, index, collection)) {
         result = value;
@@ -1664,25 +1724,20 @@
    * _.forEach({ 'one': 1, 'two': 2, 'three': 3 }, alert);
    * // => alerts each number value (order is not guaranteed)
    */
-  var forEach = function (collection, callback, thisArg) {
-    var index, iteratee = collection, result = collection;
-    if (!collection) return result;
-    callback = callback && typeof thisArg == 'undefined' ? callback : createCallback(callback, thisArg);
-    var length = iteratee.length; index = -1;
-    if (typeof length == 'number') {  
+  function forEach(collection, callback, thisArg) {
+    if (callback && typeof thisArg == 'undefined' && isArray(collection)) {
+      var index = -1,
+          length = collection.length;
+
       while (++index < length) {
-        if (callback(iteratee[index], index, collection) === indicatorObject) return result
-      }
-    }
-    else {  
-      for (index in iteratee) {
-        if (hasOwnProperty.call(iteratee, index)) {    
-        if (callback(iteratee[index], index, collection) === indicatorObject) return result;    
+        if (callback(collection[index], index, collection) === indicatorObject) {
+          break;
         }
-      }    
-    }
-    
-  };
+      }
+    } else {
+      each(collection, callback, thisArg);
+    };
+  }
 
   /**
    * Creates an object composed of keys returned from running each element of
@@ -1713,6 +1768,7 @@
   function groupBy(collection, callback, thisArg) {
     var result = {};
     callback = createCallback(callback, thisArg);
+
     forEach(collection, function(value, key, collection) {
       key = callback(value, key, collection);
       (hasOwnProperty.call(result, key) ? result[key] : result[key] = []).push(value);
@@ -1785,7 +1841,7 @@
         result[index] = callback(collection[index], index, collection);
       }
     } else {
-      forEach(collection, function(value, key, collection) {
+      each(collection, function(value, key, collection) {
         result[++index] = callback(value, key, collection);
       });
     }
@@ -1825,7 +1881,7 @@
     if (callback || !isArray(collection)) {
       callback = createCallback(callback, thisArg);
 
-      forEach(collection, function(value, index, collection) {
+      each(collection, function(value, index, collection) {
         var current = callback(value, index, collection);
         if (current > computed) {
           computed = current;
@@ -1869,7 +1925,7 @@
     if (callback || !isArray(collection)) {
       callback = createCallback(callback, thisArg);
 
-      forEach(collection, function(value, index, collection) {
+      each(collection, function(value, index, collection) {
         var current = callback(value, index, collection);
         if (current < computed) {
           computed = current;
@@ -1933,12 +1989,25 @@
    */
   function reduce(collection, callback, accumulator, thisArg) {
     var noaccum = arguments.length < 3;
-    callback || (callback = identity);
-    forEach(collection, function(value, index, collection) {
-      accumulator = noaccum
-        ? (noaccum = false, value)
-        : callback.call(thisArg, accumulator, value, index, collection)
-    });
+    callback = createCallback(callback, thisArg, indicatorObject);
+
+    if (isArray(collection)) {
+      var index = -1,
+          length = collection.length;
+
+      if (noaccum) {
+        accumulator = collection[++index];
+      }
+      while (++index < length) {
+        accumulator = callback(accumulator, collection[index], index, collection);
+      }
+    } else {
+      each(collection, function(value, index, collection) {
+        accumulator = noaccum
+          ? (noaccum = false, value)
+          : callback(accumulator, value, index, collection)
+      });
+    }
     return accumulator;
   }
 
@@ -1969,12 +2038,12 @@
       var props = keys(collection);
       length = props.length;
     }
-    callback || (callback = identity);
+    callback = createCallback(callback, thisArg, indicatorObject);
     forEach(collection, function(value, index, collection) {
       index = props ? props[--length] : --length;
       accumulator = noaccum
         ? (noaccum = false, iteratee[index])
-        : callback.call(thisArg, accumulator, iteratee[index], index, collection);
+        : callback(accumulator, iteratee[index], index, collection);
     });
     return accumulator;
   }
@@ -2088,7 +2157,7 @@
         }
       }
     } else {
-      forEach(collection, function(value, index, collection) {
+      each(collection, function(value, index, collection) {
         return (result = callback(value, index, collection)) && indicatorObject;
       });
     }
@@ -2123,6 +2192,7 @@
   function sortBy(collection, callback, thisArg) {
     var result = [];
     callback = createCallback(callback, thisArg);
+
     forEach(collection, function(value, index, collection) {
       result.push({
         'criteria': callback(value, index, collection),
@@ -2396,8 +2466,8 @@
    * @memberOf _
    * @category Arrays
    * @param {Array} [array1, array2, ...] Arrays to process.
-   * @returns {Array} Returns a new array of unique elements, in order, that are
-   *  present in **all** of the arrays.
+   * @returns {Array} Returns a new array of unique elements that are present
+   *  in **all** of the arrays.
    * @example
    *
    * _.intersection([1, 2, 3], [101, 2, 1, 10], [2, 1]);
@@ -2406,19 +2476,23 @@
   function intersection(array) {
     var args = arguments,
         argsLength = args.length,
+        index = -1,
+        length = array ? array.length : 0,
         result = [];
 
-    forEach(array, function(value) {
+    outer:
+    while (++index < length) {
+      var value = array[index];
       if (indexOf(result, value) < 0) {
-        var length = argsLength;
-        while (--length) {
-          if (indexOf(args[length], value) < 0) {
-            return;
+        var argsIndex = argsLength;
+        while (--argsIndex) {
+          if (indexOf(args[argsIndex], value) < 0) {
+            continue outer;
           }
         }
         result.push(value);
       }
-    });
+    }
     return result;
   }
 
@@ -2629,9 +2703,10 @@
     var low = 0,
         high = array ? array.length : low;
 
-    // explicitly reference `identity` for better engine inlining
+    // explicitly reference `identity` for better inlining in Firefox
     callback = callback ? createCallback(callback, thisArg) : identity;
     value = callback(value);
+
     while (low < high) {
       var mid = (low + high) >>> 1;
       callback(array[mid]) < value
@@ -3161,8 +3236,6 @@
   /**
    * This function returns the first argument passed to it.
    *
-   * Note: This function is used throughout Lo-Dash as a default callback.
-   *
    * @static
    * @memberOf _
    * @category Utilities
@@ -3501,7 +3574,7 @@
   /*--------------------------------------------------------------------------*/
 
   /**
-   * Wraps the value in a `lodash` wrapper object.
+   * Creates a `lodash` object that wraps the given `value`.
    *
    * @static
    * @memberOf _
@@ -3555,22 +3628,19 @@
   }
 
   /**
-   * This function returns the wrapper object.
-   *
-   * Note: This function is defined to ensure the existing wrapper object is
-   * returned, instead of creating a new wrapper object like the `_.chain`
-   * method does.
+   * Enables method chaining on the wrapper object.
    *
    * @name chain
-   * @deprecated
    * @memberOf _
    * @category Chaining
    * @returns {Mixed} Returns the wrapper object.
    * @example
    *
-   * var wrapped = _([1, 2, 3]);
-   * wrapped === wrapped.chain();
-   * // => true
+   * var sum = _([1, 2, 3])
+   *     .chain()
+   *     .reduce(function(sum, num) { return sum + num; })
+   *     .value()
+   * // => 6`
    */
   function wrapperChain() {
     this.__chain__ = true;
@@ -3590,7 +3660,7 @@
    * // => '1,2,3'
    */
   function wrapperToString() {
-    return String(this.__wrapped__);
+    return this.__wrapped__ + '';
   }
 
   /**
@@ -3612,11 +3682,17 @@
 
   /*--------------------------------------------------------------------------*/
 
+  // add functions that return wrapped values when chaining
+  lodash.after = after;
+  lodash.bind = bind;
   lodash.bindAll = bindAll;
-  lodash.chain = chain;
   lodash.compact = compact;
+  lodash.compose = compose;
   lodash.countBy = countBy;
+  lodash.debounce = debounce;
   lodash.defaults = defaults;
+  lodash.defer = defer;
+  lodash.delay = delay;
   lodash.difference = difference;
   lodash.filter = filter;
   lodash.flatten = flatten;
@@ -3630,9 +3706,11 @@
   lodash.keys = keys;
   lodash.map = map;
   lodash.max = max;
+  lodash.memoize = memoize;
   lodash.min = min;
   lodash.object = object;
   lodash.omit = omit;
+  lodash.once = once;
   lodash.pairs = pairs;
   lodash.pick = pick;
   lodash.pluck = pluck;
@@ -3642,6 +3720,7 @@
   lodash.shuffle = shuffle;
   lodash.sortBy = sortBy;
   lodash.tap = tap;
+  lodash.throttle = throttle;
   lodash.times = times;
   lodash.toArray = toArray;
   lodash.union = union;
@@ -3649,6 +3728,7 @@
   lodash.values = values;
   lodash.where = where;
   lodash.without = without;
+  lodash.wrap = wrap;
   lodash.zip = zip;
 
   // add aliases
@@ -3664,14 +3744,8 @@
   /*--------------------------------------------------------------------------*/
 
   // add functions that return unwrapped values when chaining
-  lodash.after = after;
-  lodash.bind = bind;
   lodash.clone = clone;
-  lodash.compose = compose;
   lodash.contains = contains;
-  lodash.debounce = debounce;
-  lodash.defer = defer;
-  lodash.delay = delay;
   lodash.escape = escape;
   lodash.every = every;
   lodash.find = find;
@@ -3694,10 +3768,8 @@
   lodash.isString = isString;
   lodash.isUndefined = isUndefined;
   lodash.lastIndexOf = lastIndexOf;
-  lodash.memoize = memoize;
   lodash.mixin = mixin;
   lodash.noConflict = noConflict;
-  lodash.once = once;
   lodash.random = random;
   lodash.reduce = reduce;
   lodash.reduceRight = reduceRight;
@@ -3706,10 +3778,8 @@
   lodash.some = some;
   lodash.sortedIndex = sortedIndex;
   lodash.template = template;
-  lodash.throttle = throttle;
   lodash.unescape = unescape;
   lodash.uniqueId = uniqueId;
-  lodash.wrap = wrap;
 
   // add aliases
   lodash.all = every;
@@ -3732,6 +3802,8 @@
 
   /*--------------------------------------------------------------------------*/
 
+  lodash.chain = chain;
+
   /**
    * The semantic version number.
    *
@@ -3739,7 +3811,7 @@
    * @memberOf _
    * @type String
    */
-  lodash.VERSION = '1.0.0-rc.2';
+  lodash.VERSION = '1.0.0-rc.3';
 
   // add functions to `lodash.prototype`
   mixin(lodash);
@@ -3748,8 +3820,8 @@
   lodash.prototype.chain = wrapperChain;
   lodash.prototype.value = wrapperValueOf;
 
-  // add mutator `Array` functions to the wrapper
-  forEach(['pop', 'push', 'reverse', 'shift', 'sort', 'splice', 'unshift'], function(methodName) {
+  // add `Array` mutator functions to the wrapper
+  each(['pop', 'push', 'reverse', 'shift', 'sort', 'splice', 'unshift'], function(methodName) {
     var func = arrayRef[methodName];
     lodash.prototype[methodName] = function() {
       var value = this.__wrapped__;
@@ -3764,8 +3836,8 @@
     };
   });
 
-  // add accessor `Array` functions to the wrapper
-  forEach(['concat', 'join', 'slice'], function(methodName) {
+  // add `Array` accessor functions to the wrapper
+  each(['concat', 'join', 'slice'], function(methodName) {
     var func = arrayRef[methodName];
     lodash.prototype[methodName] = function() {
       var value = this.__wrapped__,

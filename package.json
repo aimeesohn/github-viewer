@@ -2,6 +2,10 @@
   "name": "GitHubViewer",
   "version": "0.1.0",
 
+  "dependencies": {
+    "grunt": "~0.4"
+  },
+
   "jam": {
     "packageDir": "./vendor/jam",
     "baseUrl": "./app",

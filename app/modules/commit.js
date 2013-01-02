@@ -47,7 +47,7 @@ function(app) {
 
     tagName: "tr",
 
-    data: function() {
+    serializeData: function() {
       return {
         model: this.model,
         repo: this.options.repo,
@@ -73,16 +73,14 @@ function(app) {
       }, this);
     },
 
-    cleanup: function() {
-      this.options.commits.off(null, null, this);
-    },
-
     initialize: function() {
-      this.options.commits.on("reset", this.render, this);
+      // Whenever the collection resets, re-render.
+      this.listenTo(this.options.commits, "reset", this.render);
 
-      this.options.commits.on("fetch", function() {
+      // Show a spinner while fetching.
+      this.listenTo(this.options.commits, "fetch", function() {
         this.$el.html("<img src='/app/img/spinner.gif'>");
-      }, this);
+      });
     }
   });
 
