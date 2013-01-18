@@ -73,16 +73,14 @@ function(app) {
       }, this);
     },
 
-    cleanup: function() {
-      this.options.commits.off(null, null, this);
-    },
-
     initialize: function() {
-      this.options.commits.on("reset", this.render, this);
+      this.listenTo(this.options.commits, {
+        "reset": this.render,
 
-      this.options.commits.on("fetch", function() {
-        this.$el.html("<img src='/app/img/spinner.gif'>");
-      }, this);
+        "fetch": function() {
+          this.$el.html("<img src='/app/img/spinner.gif'>");
+        }
+      });
     }
   });
 

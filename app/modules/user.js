@@ -59,7 +59,7 @@ function(app, Repo) {
     },
 
     initialize: function() {
-      this.model.on("change", this.render, this);
+      this.listenTo(this.model, "change", this.render);
     }
   });
 
@@ -68,10 +68,6 @@ function(app, Repo) {
 
     serialize: function() {
       return { collection: this.options.users };
-    },
-
-    cleanup: function() {
-      this.options.users.off(null, null, this);
     },
 
     beforeRender: function() {
@@ -88,11 +84,13 @@ function(app, Repo) {
     },
 
     initialize: function() {
-      this.options.users.on("reset", this.render, this);
+      this.listenTo(this.options.users, {
+        "reset": this.render,
 
-      this.options.users.on("fetch", function() {
-        this.$("ul").parent().html("<img src='/app/img/spinner-gray.gif'>");
-      }, this);
+        "fetch": function() {
+          this.$("ul").parent().html("<img src='/app/img/spinner-gray.gif'>");
+        }
+      });
     },
 
     events: {

@@ -98,16 +98,14 @@ function(app, Commit) {
       }, this);
     },
 
-    cleanup: function() {
-      this.options.repos.off(null, null, this);
-    },
-
     initialize: function() {
-      this.options.repos.on("reset", this.render, this);
+      this.listenTo(this.options.repos, {
+        "reset": this.render,
 
-      this.options.repos.on("fetch", function() {
-        this.$("ul").parent().html("<img src='/app/img/spinner.gif'>");
-      }, this);
+        "fetch": function() {
+          this.$("ul").parent().html("<img src='/app/img/spinner.gif'>");
+        }
+      });
     }
   });
 
