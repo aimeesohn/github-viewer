@@ -42,7 +42,7 @@ function(app, Repo) {
 
     tagName: "li",
 
-    data: function() {
+    serialize: function() {
       return { model: this.model };
     },
 
@@ -66,7 +66,7 @@ function(app, Repo) {
   User.Views.List = Backbone.View.extend({
     template: "user/list",
 
-    data: function() {
+    serialize: function() {
       return { collection: this.options.users };
     },
 

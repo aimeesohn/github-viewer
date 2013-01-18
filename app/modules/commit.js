@@ -47,7 +47,7 @@ function(app) {
 
     tagName: "tr",
 
-    data: function() {
+    serialize: function() {
       return {
         model: this.model,
         repo: this.options.repo,

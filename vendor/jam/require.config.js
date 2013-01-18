@@ -1,9 +1,14 @@
 var jam = {
     "packages": [
         {
-            "name": "backbone",
-            "location": "../vendor/jam/backbone",
-            "main": "backbone.js"
+            "name": "jquery",
+            "location": "../vendor/jam/jquery",
+            "main": "dist/jquery.js"
+        },
+        {
+            "name": "underscore",
+            "location": "../vendor/jam/underscore",
+            "main": "underscore.js"
         },
         {
             "name": "backbone.layoutmanager",
@@ -11,32 +16,35 @@ var jam = {
             "main": "backbone.layoutmanager.js"
         },
         {
-            "name": "jquery",
-            "location": "../vendor/jam/jquery",
-            "main": "jquery.js"
-        },
-        {
             "name": "lodash",
             "location": "../vendor/jam/lodash",
             "main": "./lodash.js"
+        },
+        {
+            "name": "backbone",
+            "location": "../vendor/jam/backbone",
+            "main": "backbone.js"
         }
     ],
     "version": "0.2.11",
     "shim": {
-        "backbone": {
-            "deps": [
-                "jquery",
-                "lodash"
-            ],
-            "exports": "Backbone"
+        "underscore": {
+            "exports": "_"
         },
         "backbone.layoutmanager": {
             "deps": [
                 "jquery",
                 "backbone",
-                "lodash"
+                "underscore"
             ],
             "exports": "Backbone.LayoutManager"
+        },
+        "backbone": {
+            "deps": [
+                "jquery",
+                "underscore"
+            ],
+            "exports": "Backbone"
         }
     }
 };
