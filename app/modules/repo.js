@@ -1,12 +1,10 @@
-define([
+define(function(require, exports, module) {
+
   // Application.
-  "app",
+  var app = require("app");
 
   // Modules.
-  "modules/commit"
-],
-
-function(app, Commit) {
+  var Commit = require("modules/commit");
 
   var Repo = app.module();
 

@@ -1,11 +1,9 @@
-define([
-  // Plugins.
-  "backbone.layoutmanager",
-  "plugins/backbone.collectioncache",
-  "vendor/bootstrap/js/bootstrap"
-],
+define(function(require, exports, module) {
 
-function() {
+  // Plugins.
+  require("backbone.layoutmanager");
+  require("plugins/backbone.collectioncache");
+  require("vendor/bootstrap/js/bootstrap");
 
   // Patch collection fetching to emit a `fetch` event.
   Backbone.Collection.prototype.fetch = function() {

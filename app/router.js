@@ -1,14 +1,12 @@
-define([
+define(function(require, exports, module) {
+  
   // Application.
-  "app",
+  var app = require("app");
 
   // Modules.
-  "modules/repo",
-  "modules/user",
-  "modules/commit"
-],
-
-function(app, Repo, User, Commit) {
+  var Repo = require("modules/repo");
+  var User = require("modules/user");
+  var Commit = require("modules/commit");
 
   // Defining the application router, you can attach sub routers here.
   var Router = Backbone.Router.extend({

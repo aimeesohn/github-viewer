@@ -1,9 +1,7 @@
-define([
+define(function(require, exports, module) {
+  
   // Application.
-  "app"
-],
-
-function(app) {
+  var app = require("app");
 
   var Commit = app.module();
 

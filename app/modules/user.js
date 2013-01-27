@@ -1,12 +1,10 @@
-define([
+define(function(require, exports, module) {
+  
   // Application.
-  "app",
+  var app = require("app");
 
   // Modules.
-  "modules/repo"
-],
-
-function(app, Repo) {
+  var Repo = require("modules/repo");
 
   var User = app.module();
 
