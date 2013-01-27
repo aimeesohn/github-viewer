@@ -1,6 +1,5 @@
 /*!
- * Lo-Dash 0.10.0 (Custom Build) <http://lodash.com>
- * Build: `lodash underscore -d -o ./lodash.underscore.js`
+ * Lo-Dash v0.9.2 <http://lodash.com>
  * (c) 2012 John-David Dalton <http://allyoucanleet.com/>
  * Based on Underscore.js 1.4.2 <http://underscorejs.org>
  * (c) 2009-2012 Jeremy Ashkenas, DocumentCloud Inc.
@@ -231,16 +230,6 @@
 
   /*--------------------------------------------------------------------------*/
 
-  /** Reusable iterator options for `assign` and `defaults` */
-  var assignIteratorOptions = {
-    'args': 'object, source, guard',
-    'top':
-      'for (var argsIndex = 1, argsLength = typeof guard == \'number\' ? 2 : arguments.length; argsIndex < argsLength; argsIndex++) {\n' +
-      '  if ((iteratee = arguments[argsIndex])) {',
-    'objectLoop': 'result[index] = value',
-    'bottom': '  }\n}'
-  };
-
   /**
    * Reusable iterator options shared by `forEach`, `forIn`, and `forOwn`.
    */
@@ -459,38 +448,6 @@
   }
 
   /*--------------------------------------------------------------------------*/
-
-  /**
-   * Assigns own enumerable properties of source object(s) to the `destination`
-   * object. Subsequent sources will overwrite propery assignments of previous
-   * sources.
-   *
-   * @static
-   * @memberOf _
-   * @alias extend
-   * @category Objects
-   * @param {Object} object The destination object.
-   * @param {Object} [source1, source2, ...] The source objects.
-   * @returns {Object} Returns the destination object.
-   * @example
-   *
-   * _.assign({ 'name': 'moe' }, { 'age': 40 });
-   * // => { 'name': 'moe', 'age': 40 }
-   */
-  function assign(object) {
-    if (!object) {
-      return object;
-    }
-    for (var argsIndex = 1, argsLength = arguments.length; argsIndex < argsLength; argsIndex++) {
-      var iteratee = arguments[argsIndex];
-      if (iteratee) {
-        for (var key in iteratee) {
-          object[key] = iteratee[key];
-        }
-      }
-    }
-    return object;
-  }
   /**
    * Checks if `value` is an `arguments` object.
    *
@@ -561,7 +518,7 @@
   };
 
   /**
-   * Iterates over an object's own enumerable properties, executing the `callback`
+   * Iterates over `object`'s own enumerable properties, executing the `callback`
    * for each property. The `callback` is bound to `thisArg` and invoked with three
    * arguments; (value, key, object). Callbacks may exit iteration early by explicitly
    * returning `false`.
@@ -703,12 +660,12 @@
    */
   function clone(value) {
     return value && objectTypes[typeof value]
-      ? (isArray(value) ? slice.call(value) : assign({}, value))
+      ? (isArray(value) ? slice.call(value) : extend({}, value))
       : value
   }
 
   /**
-   * Assigns own enumerable properties of source object(s) to the `destination`
+   * Assigns enumerable properties of the default object(s) to the `destination`
    * object for all `destination` properties that resolve to `null`/`undefined`.
    * Once a property is set, additional defaults of the same property will be
    * ignored.
@@ -725,22 +682,51 @@
    * _.defaults(iceCream, { 'flavor': 'vanilla', 'sprinkles': 'rainbow' });
    * // => { 'flavor': 'chocolate', 'sprinkles': 'rainbow' }
    */
-  function defaults(object) {
-    if (!object) {
-      return object;
-    }
+  var defaults = function (object) {
+    var index, value, iteratee = object, result = object;
+    if (!object) return result;
     for (var argsIndex = 1, argsLength = arguments.length; argsIndex < argsLength; argsIndex++) {
-      var iteratee = arguments[argsIndex];
-      if (iteratee) {
-        for (var key in iteratee) {
-          if (object[key] == null) {
-            object[key] = iteratee[key];
-          }
-        }
+      if (iteratee = arguments[argsIndex]) {;
+    
+      for (index in iteratee) {
+        value = iteratee[index];
+        if (result[index] == null) result[index] = value;    
+      }    
       }
-    }
-    return object;
-  }
+    };
+    return result
+  };
+
+  /**
+   * Assigns enumerable properties of the source object(s) to the `destination`
+   * object. Subsequent sources will overwrite propery assignments of previous
+   * sources.
+   *
+   * @static
+   * @memberOf _
+   * @category Objects
+   * @param {Object} object The destination object.
+   * @param {Object} [source1, source2, ...] The source objects.
+   * @returns {Object} Returns the destination object.
+   * @example
+   *
+   * _.extend({ 'name': 'moe' }, { 'age': 40 });
+   * // => { 'name': 'moe', 'age': 40 }
+   */
+  var extend = function (object) {
+    var index, value, iteratee = object, result = object;
+    if (!object) return result;
+    for (var argsIndex = 1, argsLength = arguments.length; argsIndex < argsLength; argsIndex++) {
+      if (iteratee = arguments[argsIndex]) {;
+    
+      for (index in iteratee) {
+        value = iteratee[index];
+        result[index] = value;    
+      }    
+      }
+    };
+    return result
+  };
 
   /**
    * Creates a sorted array of all enumerable properties, own and inherited,
@@ -1429,16 +1415,10 @@
    * // => true
    */
   function contains(collection, target) {
-    var length = collection ? collection.length : 0,
-        result = false;
-    if (typeof length == 'number') {
-      result = indexOf(collection, target) > -1;
-    } else {
-      forEach(collection, function(value) {
-        return (result = value === target) && indicatorObject;
-      });
-    }
-    return result;
+    var length = collection ? collection.length : 0;
+    return typeof length == 'number'
+      ? indexOf(collection, target) > -1
+      : some(collection, function(value) { return value === target; });
   }
 
   /**
@@ -1538,24 +1518,11 @@
   function filter(collection, callback, thisArg) {
     var result = [];
     callback = createCallback(callback, thisArg);
-
-    if (isArray(collection)) {
-      var index = -1,
-          length = collection.length;
-
-      while (++index < length) {
-        var value = collection[index];
-        if (callback(value, index, collection)) {
-          result.push(value);
-        }
+    forEach(collection, function(value, index, collection) {
+      if (callback(value, index, collection)) {
+        result.push(value);
       }
-    } else {
-      forEach(collection, function(value, index, collection) {
-        if (callback(value, index, collection)) {
-          result.push(value);
-        }
-      });
-    }
+    });
     return result;
   }
 
@@ -1585,7 +1552,7 @@
     forEach(collection, function(value, index, collection) {
       if (callback(value, index, collection)) {
         result = value;
-        return indicatorObject;
+        return false;
       }
     });
     return result;
@@ -2026,7 +1993,7 @@
    *  else `false`.
    * @example
    *
-   * _.some([null, 0, 'yes', false], Boolean);
+   * _.some([null, 0, 'yes', false]);
    * // => true
    */
   function some(collection, callback, thisArg) {
@@ -2038,7 +2005,7 @@
           length = collection.length;
 
       while (++index < length) {
-        if ((result = callback(collection[index], index, collection))) {
+        if (result = callback(collection[index], index, collection)) {
           break;
         }
       }
@@ -2138,7 +2105,10 @@
    * // => [{ 'name': 'moe', 'age': 40 }]
    */
   function where(collection, properties) {
-    var props = keys(properties);
+    var props = [];
+    forIn(properties, function(value, prop) {
+      props.push(prop);
+    });
     return filter(collection, function(object) {
       var length = props.length;
       while (length--) {
@@ -3543,7 +3513,9 @@
    * @memberOf _
    * @type String
    */
-  lodash.VERSION = '0.10.0';
+  lodash.VERSION = '0.9.2';
+
+  // assign static methods
   lodash.after = after;
   lodash.bind = bind;
   lodash.bindAll = bindAll;
@@ -3560,6 +3532,7 @@
   lodash.difference = difference;
   lodash.escape = escape;
   lodash.every = every;
+  lodash.extend = extend;
   lodash.filter = filter;
   lodash.find = find;
   lodash.first = first;
@@ -3638,7 +3611,6 @@
   lodash.detect = find;
   lodash.drop = rest;
   lodash.each = forEach;
-  lodash.extend = assign;
   lodash.foldl = reduce;
   lodash.foldr = reduceRight;
   lodash.head = first;

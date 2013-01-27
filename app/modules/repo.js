@@ -42,7 +42,7 @@ function(app, Commit) {
 
     tagName: "li",
 
-    serializeData: function() {
+    serialize: function() {
       return { model: this.model };
     },
 
@@ -78,7 +78,7 @@ function(app, Commit) {
 
     className: "repos-wrapper",
 
-    serializeData: function() {
+    serialize: function() {
       return {
         count: this.options.repos.length 
       };

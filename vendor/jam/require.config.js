@@ -38,9 +38,9 @@ var jam = {
             "deps": [
                 "jquery",
                 "backbone",
-                "lodash"
+                "underscore"
             ],
-            "exports": "Backbone.LayoutManager"
+            "exports": "Backbone.Layout"
         },
         "underscore": {
             "exports": "_"

@@ -17,8 +17,8 @@ module.exports = ->
       # The jshint option for scripturl is set to lax, because the anchor
       # override inside main.js needs to test for them so as to not accidentally
       # route.
-        options:
-          scripturl: true
+      options:
+        scripturl: true
     
     # The jst task compiles all application templates into JavaScript
     # functions with the underscore.js template function from 1.2.4.  You can
@@ -170,17 +170,19 @@ module.exports = ->
         files:
           "dist/release/app/": "app/**"
           "dist/release/vendor/": "vendor/**"
-  
+
+  @loadNpmTasks "bbb"
+
   # Alias the targeted build tasks to make it easier to opt out.
-  @registerTask "build", "copy:release targethtml:release"
+  @registerTask "build", ["copy:release", "targethtml:release"]
   
   # The debug task will remove all contents inside the dist/ folder, lint
   # all your code, precompile all the underscore templates into
   # dist/debug/templates.js, compile all the application code into
   # dist/debug/require.js, and then concatenate the require/define shim
   # almond.js and dist/debug/templates.js into the require.js file.
-  @registerTask "debug", "clean lint jst requirejs concat styles"
+  @registerTask ["debug", "clean", "lint", "jst", "requirejs", "concat", "styles"]
   
   # The release task will run the debug tasks and then minify the
   # dist/debug/require.js file and CSS files.
-  @registerTask "release", "debug min mincss build"
+  @registerTask "release", ["debug", "min", "mincss", "build"]
