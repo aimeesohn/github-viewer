@@ -3,9 +3,7 @@ define(function(require, exports, module) {
   // Application.
   var app = require("app");
 
-  var Commit = app.module();
-
-  Commit.Model = Backbone.Model.extend({
+  exports.Model = Backbone.Model.extend({
     defaults: function() {
       return {
         commit: {}
@@ -13,8 +11,8 @@ define(function(require, exports, module) {
     }
   });
 
-  Commit.Collection = Backbone.Collection.extend({
-    model: Commit.Model,
+  exports.Collection = Backbone.Collection.extend({
+    model: exports.Model,
 
     cache: true,
 
@@ -40,49 +38,47 @@ define(function(require, exports, module) {
     }
   });
 
-  Commit.Views.Item = Backbone.View.extend({
-    template: "commit/item",
+  exports.Views = {
+    Item: Backbone.View.extend({
+      template: "commit/item",
+      // Use the <TR> from the template.
+      el: false,
 
-    tagName: "tr",
+      serialize: function() {
+        return {
+          model: this.model,
+          repo: this.options.repo,
+          user: this.options.user
+        };
+      }
+    }),
 
-    serialize: function() {
-      return {
-        model: this.model,
-        repo: this.options.repo,
-        user: this.options.user
-      };
-    }
-  });
+    List: Backbone.View.extend({
+      tagName: "table",
+      className: "table table-striped",
 
-  Commit.Views.List = Backbone.View.extend({
-    tagName: "table",
+      beforeRender: function() {
+        this.$el.children().remove();
 
-    className: "table table-striped",
+        this.options.commits.each(function(commit) {
+          this.insertView(new exports.Views.Item({
+            model: commit,
+            repo: this.options.commits.repo,
+            user: this.options.commits.user
+          }));
+        }, this);
+      },
 
-    beforeRender: function() {
-      this.$el.children().remove();
+      initialize: function() {
+        // Whenever the collection resets, re-render.
+        this.listenTo(this.options.commits, "reset", this.render);
 
-      this.options.commits.each(function(commit) {
-        this.insertView(new Commit.Views.Item({
-          model: commit,
-          repo: this.options.commits.repo,
-          user: this.options.commits.user
-        }));
-      }, this);
-    },
-
-    initialize: function() {
-      // Whenever the collection resets, re-render.
-      this.listenTo(this.options.commits, "reset", this.render);
-
-      // Show a spinner while fetching.
-      this.listenTo(this.options.commits, "fetch", function() {
-        this.$el.html("<img src='/app/img/spinner.gif'>");
-      });
-    }
-  });
-
-  // Required, return the module for AMD compliance.
-  return Commit;
+        // Show a spinner while fetching.
+        this.listenTo(this.options.commits, "fetch", function() {
+          this.$el.html("<img src='/app/img/spinner.gif'>");
+        });
+      }
+    })
+  };
 
 });

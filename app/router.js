@@ -9,7 +9,7 @@ define(function(require, exports, module) {
   var Commit = require("modules/commit");
 
   // Defining the application router, you can attach sub routers here.
-  var Router = Backbone.Router.extend({
+  module.exports = Backbone.Router.extend({
     initialize: function() {
       // TODO Clean this up...
       var collections = {
@@ -113,8 +113,5 @@ define(function(require, exports, module) {
       this.commits.repo = false;
     }
   });
-
-  // Required, return the module for AMD compliance.
-  return Router;
 
 });

@@ -16,16 +16,6 @@ define(function(require, exports, module) {
     };
   }();
 
-  // Provide a global location to place configuration settings and module
-  // creation.
-  var app = {
-    // The root path to run the application through.
-    root: "/"
-  };
-
-  // Localize or create a new JavaScript Template object.
-  var JST = window.JST = window.JST || {};
-
   // Configure LayoutManager with Backbone Boilerplate defaults.
   Backbone.Layout.configure({
     // Allow LayoutManager to augment Backbone.View.prototype.
@@ -34,6 +24,9 @@ define(function(require, exports, module) {
     prefix: "app/templates/",
 
     fetch: function(path) {
+      // Localize or create a new JavaScript Template object.
+      var JST = window.JST = window.JST || {};
+
       // Concatenate the file extension.
       path = path + ".html";
 
@@ -46,19 +39,18 @@ define(function(require, exports, module) {
       var done = this.async();
 
       // Seek out the template asynchronously.
-      $.get(app.root + path, function(contents) {
-        done(JST[path] = _.template(contents));
+      $.get(exports.root + path, function(contents) {
+        done(_.template(contents));
       });
     }
   });
 
-  // Mix Backbone.Events, modules, and layout management into the app object.
-  return _.extend(app, {
-    // Create a custom object with a nested Views object.
-    module: function(additionalProps) {
-      return _.extend({ Views: {} }, additionalProps);
-    },
+  // The root path to run the application through.
+  exports.root = "/";
 
+  // Mix Backbone.Events, modules, and layout management into the exports
+  // object.
+  _.extend(exports, {
     // Helper for using layouts.
     useLayout: function(name, options) {
       // Enable variable arity by allowing the first argument to be the options
