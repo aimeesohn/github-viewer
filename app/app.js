@@ -1,6 +1,11 @@
 // The root path to run the application through.
 exports.root = "/";
 
+// External library dependencies.
+var _ = require("underscore");
+var Backbone = require("backbone");
+var $ = require("jquery");
+
 // Useful defaults for GitHub Viewer.
 _.extend(Backbone.Collection.prototype, {
   cache: true,
@@ -65,7 +70,3 @@ require("backbone.layoutmanager").configure({
     }, "text");
   }
 });
-
-// Load other plugins.
-require("plugins/backbone.collectioncache");
-require("vendor/bootstrap/js/bootstrap");

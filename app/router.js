@@ -6,6 +6,10 @@ var Repo = require("modules/repo");
 var User = require("modules/user");
 var Commit = require("modules/commit");
 
+// Plugins.
+require("plugins/backbone.collectioncache");
+require("vendor/bootstrap/js/bootstrap");
+
 // Defining the application router, you can attach sub routers here.
 module.exports = Backbone.Router.extend({
   initialize: function() {

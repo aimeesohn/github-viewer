@@ -13,7 +13,7 @@
     "dependencies": {
      "backbone": "*",
       "jquery": "*",
-      "lodash": "*",
+      "underscore": "*",
       "backbone.layoutmanager": "*"
     }
   }

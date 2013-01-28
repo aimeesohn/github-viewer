@@ -2058,11 +2058,6 @@ var jam = {
             "main": "dist/jquery.js"
         },
         {
-            "name": "lodash",
-            "location": "../vendor/jam/lodash",
-            "main": "./lodash.js"
-        },
-        {
             "name": "underscore",
             "location": "../vendor/jam/underscore",
             "main": "underscore.js"
@@ -2072,7 +2067,8 @@ var jam = {
     "shim": {
         "backbone": {
             "deps": [
-                "lodash"
+                "jquery",
+                "underscore"
             ],
             "exports": "Backbone"
         },
