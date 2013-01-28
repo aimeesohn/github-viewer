@@ -9,23 +9,6 @@ exports.Collection = Backbone.Collection.extend({
     return "https://api.github.com/users/" + this.user + "/repos?callback=?";
   },
 
-  cache: true,
-
-  parse: function(obj) {
-    // Safety check ensuring only valid data is used.
-    if (obj.data.message !== "Not Found") {
-      return obj.data;
-    }
-
-    return this.models;
-  },
-
-  initialize: function(models, options) {
-    if (options) {
-      this.user = options.user;
-    }
-  },
-
   comparator: function(repo) {
     return -new Date(repo.get("pushed_at"));
   }
@@ -50,9 +33,8 @@ exports.Views = {
       var org = app.router.users.org;
       var user = app.router.repos.user;
 
-      // Immediately reflect the active state.
-      app.active = this.model;
-      this.render();
+      // Add the active class.
+      this.makeActive();
 
       // Easily create a URL.
       app.router.go("org", org, "user", user, "repo", model.get("name"));
@@ -60,10 +42,16 @@ exports.Views = {
       return false;
     },
 
+    makeActive: function() {
+      // Remove the active class from all other repo items.
+      this.$el.siblings().removeClass("active");
+      // Add the active class here.
+      this.$el.addClass("active");
+    },
+
     beforeRender: function() {
-      if (app.active === this.model) {
-        this.$el.siblings().removeClass("active");
-        this.$el.addClass("active");
+      if (this.options.active) {
+        this.makeActive();
       }
     }
   }),
@@ -74,33 +62,23 @@ exports.Views = {
     className: "repos-wrapper",
 
     serialize: function() {
-      return {
-        count: this.options.repos.length 
-      };
+      return { repos: this.options.repos };
     },
 
     beforeRender: function() {
-      var active = this.options.commits.repo;
-
       this.options.repos.each(function(repo) {
-        if (repo.get("name") === active) {
-          app.active = repo;
-        }
-
         this.insertView("ul", new exports.Views.Item({
-          model: repo
+          model: repo,
+
+          // Determine if this View is active.
+          active: repo.get("name") === this.options.commits.repo
         }));
       }, this);
     },
 
     initialize: function() {
       // Whenever the collection resets, re-render.
-      this.listenTo(this.options.repos, "reset", this.render);
-
-      // Show a spinner while fetching.
-      this.listenTo(this.options.repos, "fetch", function() {
-        this.$("ul").parent().html("<img src='/app/img/spinner.gif'>");
-      });
+      this.listenTo(this.options.repos, "sync request reset", this.render);
     }
   })
 };

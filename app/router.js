@@ -25,11 +25,17 @@ module.exports = Backbone.Router.extend({
     _.extend(this, collections);
 
     // Use main layout and set Views.
-    app.useLayout("main-layout").setViews({
-      ".users": new User.Views.List(collections),
-      ".repos": new Repo.Views.List(collections),
-      ".commits": new Commit.Views.List(collections)
-    }).render();
+    this.layout = new Backbone.Layout({
+      el: "main",
+
+      template: "main",
+
+      views: {
+        ".users": new User.Views.List(collections),
+        ".repos": new Repo.Views.List(collections),
+        ".commits": new Commit.Views.List(collections)
+      }
+    }).render().view;
   },
 
   routes: {

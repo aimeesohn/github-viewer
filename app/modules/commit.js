@@ -1,44 +1,17 @@
 // Application.
 var app = require("app");
 
-exports.Model = Backbone.Model.extend({
-  defaults: function() {
-    return {
-      commit: {}
-    };
-  }
-});
-
 exports.Collection = Backbone.Collection.extend({
-  model: exports.Model,
-
-  cache: true,
-
   url: function() {
     return "https://api.github.com/repos/" + this.user + "/" + this.repo +
       "/commits?callback=?";
-  },
-
-  parse: function(obj) {
-    // Safety check ensuring only valid data is used.
-    if (obj.data.message !== "Not Found") {
-      return obj.data;
-    }
-
-    return this.models;
-  },
-
-  initialize: function(models, options) {
-    if (options) {
-      this.user = options.user;
-      this.repo = options.repo;
-    }
   }
 });
 
 exports.Views = {
   Item: Backbone.View.extend({
     template: "commit/item",
+
     // Use the <TR> from the template.
     el: false,
 
@@ -52,14 +25,11 @@ exports.Views = {
   }),
 
   List: Backbone.View.extend({
-    tagName: "table",
-    className: "table table-striped",
+    template: "commit/list",
 
     beforeRender: function() {
-      this.$el.children().remove();
-
       this.options.commits.each(function(commit) {
-        this.insertView(new exports.Views.Item({
+        this.insertView("table", new exports.Views.Item({
           model: commit,
           repo: this.options.commits.repo,
           user: this.options.commits.user
@@ -67,14 +37,12 @@ exports.Views = {
       }, this);
     },
 
-    initialize: function() {
-      // Whenever the collection resets, re-render.
-      this.listenTo(this.options.commits, "reset", this.render);
+    serialize: function() {
+      return { commits: this.options.commits };
+    },
 
-      // Show a spinner while fetching.
-      this.listenTo(this.options.commits, "fetch", function() {
-        this.$el.html("<img src='/app/img/spinner.gif'>");
-      });
+    initialize: function() {
+      this.listenTo(this.options.commits, "reset sync request", this.render);
     }
   })
 };

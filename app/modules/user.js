@@ -7,27 +7,6 @@ var Repo = require("modules/repo");
 exports.Collection = Backbone.Collection.extend({
   url: function() {
     return "https://api.github.com/orgs/" + this.org + "/members?callback=?";
-  },
-
-  cache: true,
-
-  parse: function(obj) {
-    // Safety check ensuring only valid data is used.
-    if (obj.data.message !== "Not Found") {
-      this.status = "valid";
-
-      return obj.data;
-    }
-
-    this.status = "invalid";
-
-    return obj;
-  },
-
-  initialize: function(models, options) {
-    if (options) {
-      this.org = options.org;
-    }
   }
 });
 
@@ -62,7 +41,7 @@ exports.Views = {
     template: "user/list",
 
     serialize: function() {
-      return { collection: this.options.users };
+      return { users: this.options.users };
     },
 
     beforeRender: function() {
@@ -80,12 +59,7 @@ exports.Views = {
 
     initialize: function() {
       // Whenever the collection resets, re-render.
-      this.listenTo(this.options.users, "reset", this.render);
-
-      // Show a spinner while fetching.
-      this.listenTo(this.options.users, "fetch", function() {
-        this.$("ul").parent().html("<img src='/app/img/spinner-gray.gif'>");
-      }, this);
+      this.listenTo(this.options.users, "reset sync request", this.render);
     },
 
     events: {
